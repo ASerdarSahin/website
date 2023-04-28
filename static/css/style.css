@@ -1,0 +1,21 @@
+h1 {
+    color: darkred;
+    font-size:45px;
+
+}
+h2 {
+    color: darkred;
+    font-size:30px;
+
+}
+
+
+body{
+    background-color:  #99a3a4;
+}
+
+#demo{
+    color: darkred;
+    font-size:12px;
+
+}
