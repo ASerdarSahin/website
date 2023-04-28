@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2> Welcome to my page </h2>
+<p> This is my first paragraph {{ author }} </p>
+{% if sunny %}
+<p> 'Today is sunny!' </p>
+{% else %}
+<p> 'Today is not sunny!' </p>
+{% endif %}
+
+{% for post in posts %}
+    <h2> {{ post.title }} </h2>
+    <p> {{ post.content }} </p>
+{% endfor %}
+
+{% endblock %}
