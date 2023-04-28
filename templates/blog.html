@@ -2,7 +2,9 @@
 
 {% block content %}
 
-<h2> Welcome to my page </h2>
+<h1>Welcome to my page </h1>
+    <br/><br/>
+    <img src="{{ url_for('static', filename='images/488467.jpg') }}">
 <p> This is my first paragraph {{ author }} </p>
 {% if sunny %}
 <p> 'Today is sunny!' </p>
