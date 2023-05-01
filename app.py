@@ -1,22 +1,24 @@
 from flask import Flask, render_template, flash, request
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
+from wtforms.validators import DataRequired, EqualTo, Length
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_migrate import Migrate
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Create a Flask Instance
 app = Flask(__name__)
 # Add Database
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/mydb'
 
-app.config['SECRET_KEY'] = "mysecretkey" # For CSRF Protection (Forms)
+app.config['SECRET_KEY'] = "mysecretkey"  # For CSRF Protection (Forms)
 
 # Initialize the Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
 
 # Create a Model
 class Users(db.Model):
@@ -25,18 +27,40 @@ class Users(db.Model):
     email = db.Column(db.String(120), nullable=False, unique=True)
     favorite_color = db.Column(db.String(120))
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    # Add Password Hashing
+    password_hash = db.Column(db.String(128))
 
+    @property
+    def password(self):
+        raise AttributeError('Password is not a readable attribute.')
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
     # Create a String
     def __repr__(self):
         return '<Name %r>' % self.name
+
 
 # Create a Class for the UserForm
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired()])
     favorite_color = StringField("Favorite Color")
+    password_hash = PasswordField('Password',validators=[DataRequired(), EqualTo('password_hash2', message='Passwords must match')])
+    password_hash2 = PasswordField('Confirm Password', validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+
+# Create a Class for the Password Form
+class PasswordForm(FlaskForm):
+    email = StringField("What is your email?", validators=[DataRequired()])
+    password_hash = PasswordField("What is your password?", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
 
 # Create a Class for the Form
 class NamerForm(FlaskForm):
@@ -44,14 +68,13 @@ class NamerForm(FlaskForm):
     submit = SubmitField("Submit")
 
 # New MySQL DB
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/my_db'
-
-
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/my_db'
 
 
 @app.route('/')
 def hello_world():  # put application's code here
     return render_template('index.html')
+
 
 # Create a function to add data to the database
 @app.route('/user/add', methods=['GET', 'POST'])
@@ -62,16 +85,38 @@ def add_user():
     if form.validate_on_submit():
         user = Users.query.filter_by(email=form.email.data).first()
         if user is None:
-            user = Users(name=form.name.data, email=form.email.data, favorite_color=form.favorite_color.data)
+            # Hash the password
+            hashed_pw = generate_password_hash(form.password_hash.data, method="sha256")
+            user = Users(name=form.name.data, email=form.email.data, favorite_color=form.favorite_color.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
         form.email.data = ''
         form.favorite_color.data = ''
+        form.password_hash.data = ''
         flash('User Added Successfully!')
     our_users = Users.query.order_by(Users.date_added)
     return render_template('add_user.html', form=form, name=name, our_users=our_users)
+
+
+# Create a function to delete data from the database
+@app.route('/delete/<int:id>')
+def delete(id):
+    name = None
+    form = UserForm()
+    user_to_delete = Users.query.get_or_404(id)
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash("Data deleted successfully.")
+
+        our_users = Users.query.order_by(Users.date_added)
+        return render_template('add_user.html', form=form, name=name, our_users=our_users)
+    except:
+        flash("There was a problem deleting data.")
+        our_users = Users.query.order_by(Users.date_added)
+        return render_template('add_user.html', form=form, name=name, our_users=our_users)
 
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):
@@ -90,7 +135,34 @@ def update(id):
             flash("There was a problem updating data.")
             return render_template('update.html', form=form, name_to_update=name_to_update)
     else:
-        return render_template('update.html', form=form, name_to_update=name_to_update)
+        return render_template('update.html', form=form, name_to_update=name_to_update, id=id)
+
+
+# Create Password Test Page
+@app.route('/test_pw', methods=['GET', 'POST'])
+def test_pw():
+    email = None
+    password = None
+    pw_to_check = None
+    passed = None
+    form = PasswordForm()
+
+    # Validate Form
+    if form.validate_on_submit():
+        email=form.email.data
+        password=form.password_hash.data
+        # Clear the form
+        form.email.data=''
+        form.password_hash.data=''
+
+        # Lookup user by email address
+        pw_to_check = Users.query.filter_by(email=email).first()
+        # Check the password
+        passed=check_password_hash(pw_to_check.password_hash, password)
+
+
+        flash('Form Submitted Successfully!')
+    return render_template('test_pw.html', email=email, password=password, pw_to_check=pw_to_check, passed=passed, form=form)
 
 
 @app.route('/name', methods=['GET', 'POST'])
@@ -122,8 +194,6 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 #Internal Server Error
-
-
 @app.errorhandler(500)
 def page_not_found(e):
     return render_template('500.html'), 500
