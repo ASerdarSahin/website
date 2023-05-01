@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash
+from flask import Flask, render_template, flash, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
@@ -8,7 +8,9 @@ from datetime import datetime
 # Create a Flask Instance
 app = Flask(__name__)
 # Add Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/mydb'
+
 app.config['SECRET_KEY'] = "mysecretkey" # For CSRF Protection (Forms)
 
 # Initialize the Database
@@ -65,6 +67,24 @@ def add_user():
         flash('User Added Successfully!')
     our_users = Users.query.order_by(Users.date_added)
     return render_template('add_user.html', form=form, name=name, our_users=our_users)
+
+@app.route('/update/<int:id>', methods=['GET', 'POST'])
+def update(id):
+    form = UserForm()
+    name_to_update = Users.query.get_or_404(id)
+    if request.method == 'POST':
+        name_to_update.name = request.form['name']
+        name_to_update.email = request.form['email']
+        try:
+            db.session.commit()
+            # return redirect('/users')
+            flash("Data updated successfully.")
+            return render_template('update.html', form=form, name_to_update=name_to_update)
+        except:
+            flash("There was a problem updating data.")
+            return render_template('update.html', form=form, name_to_update=name_to_update)
+    else:
+        return render_template('update.html', form=form, name_to_update=name_to_update)
 
 
 @app.route('/name', methods=['GET', 'POST'])
