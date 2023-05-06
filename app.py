@@ -7,6 +7,7 @@ from datetime import datetime
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.widgets import TextArea
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 
 # Create a Flask Instance
 app = Flask(__name__)
@@ -19,6 +20,17 @@ app.config['SECRET_KEY'] = "mysecretkey"  # For CSRF Protection (Forms)
 # Initialize the Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+
+# Initialize Login Manager (flask_login)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
 
 
 # Create a Blog Post Model
@@ -41,9 +53,10 @@ class PostForm(FlaskForm):
 
 
 # Create a Model
-class Users(db.Model):
+class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(25), nullable=False, )
+    username = db.Column(db.String(25), nullable=False, unique=True)
+    name = db.Column(db.String(25), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
     favorite_color = db.Column(db.String(120))
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
@@ -69,6 +82,7 @@ class Users(db.Model):
 # Create a Class for the UserForm
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
+    username = StringField("Username", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired()])
     favorite_color = StringField("Favorite Color")
     password_hash = PasswordField('Password', validators=[DataRequired(),
@@ -90,6 +104,14 @@ class NamerForm(FlaskForm):
     submit = SubmitField("Submit")
 
 
+# Create a Class for the Login Form
+class LoginForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired()])
+    # remember = BooleanField("Remember Me")
+    submit = SubmitField("Submit")
+
+
 # New MySQL DB
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/my_db'
 
@@ -98,6 +120,40 @@ class NamerForm(FlaskForm):
 def hello_world():  # put application's code here
     return render_template('index.html')
 
+
+# Create Login Page
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(username=form.username.data).first()
+        if user is not None:
+            # Check Password Hash
+            if check_password_hash(user.password_hash, form.password.data):
+                login_user(user)
+                flash('Logged in successfully!')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Incorrect Password. Please try again.')
+        else:
+            flash('That user does not exist. Please try again or register.')
+    return render_template('login.html', form=form)
+
+
+# Create Logout Function
+@app.route('/logout', methods=['GET', 'POST'])
+@login_required
+def logout():
+    logout_user()
+    flash('You logged out!')
+    return redirect(url_for('login'))
+
+
+# Create Dashboard Page
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
 
 @app.route('/posts')
 def posts():
@@ -113,6 +169,7 @@ def post(id):
 
 
 @app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_post(id):
     post = BlogPost.query.get_or_404(id)
     form = PostForm()
@@ -136,6 +193,7 @@ def edit_post(id):
 
 # Delete Post
 @app.route('/posts/delete/<int:id>')
+@login_required
 def delete_post(id):
     post_to_delete = BlogPost.query.get_or_404(id)
 
@@ -153,6 +211,7 @@ def delete_post(id):
 
 # Add Post Page
 @app.route('/add-post', methods=['GET', 'POST'])
+@login_required
 def add_post():
     form = PostForm()
 
@@ -185,12 +244,13 @@ def add_user():
         if user is None:
             # Hash the password
             hashed_pw = generate_password_hash(form.password_hash.data, method="sha256")
-            user = Users(name=form.name.data, email=form.email.data, favorite_color=form.favorite_color.data,
+            user = Users(name=form.name.data, username=form.username.data, email=form.email.data, favorite_color=form.favorite_color.data,
                          password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
+        form.username.data = ''
         form.email.data = ''
         form.favorite_color.data = ''
         form.password_hash.data = ''
@@ -201,6 +261,7 @@ def add_user():
 
 # Create a function to delete data from the database
 @app.route('/delete/<int:id>')
+@login_required
 def delete(id):
     name = None
     form = UserForm()
@@ -219,6 +280,7 @@ def delete(id):
 
 
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update(id):
     form = UserForm()
     name_to_update = Users.query.get_or_404(id)
@@ -226,6 +288,7 @@ def update(id):
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
         name_to_update.favorite_color = request.form['favorite_color']
+        name_to_update.username = request.form['username']
         try:
             db.session.commit()
             # return redirect('/users')
