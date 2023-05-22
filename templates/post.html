@@ -16,13 +16,15 @@
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">{{ post.title }}</h5>
-            <h6 class="card-subtitle mb-2 text-muted">{{ post.author }}</h6>
+            <h6 class="card-subtitle mb-2 text-muted">{{ post.poster.username }}</h6>
             <h6 class="card-subtitle mb-2 text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</h6>
             <br/>
             <p class="card-text">{{ post.content }}</p>
             <a href="{{ url_for('posts') }}" class="btn btn-outline-dark" >Go Back</a>
+            {% if post.poster_id == current_user.id %}
             <a href="{{ url_for('edit_post', id=post.id) }}" class="btn btn-outline-dark">Edit</a>
             <a href="{{ url_for('delete_post', id=post.id) }}" class="btn btn-outline-danger">Delete</a>
+            {% endif %}
         </div>
     </div>
     <br/>

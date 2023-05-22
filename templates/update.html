@@ -10,21 +10,9 @@
     </div>
 {% endfor %}
 
-{% if name %}
-    <h1> User Updated!</h1>
-    <br/><br/>
-    <table class="table table-light table-hover table-bordered table-striped">
-    {% for our_user in our_users %}
-        <tr>
-        <td>
-        {{ our_user.id }}.  <a href="{{url_for('update', id=our_user.id)}}">{{ our_user.name }}</a>
-            - {{ our_user.email }} - {{ our_user.favorite_color }}
-        </td>
-        </tr>
-    {% endfor %}
-    </table>
+{% if id == current_user.id %}
 
-{% else %}
+
     <h1> Update User! </h1>
     <br/>
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
@@ -60,6 +48,15 @@
         </tr>
     {% endfor %}
     </table>
+
+{% else %}
+    <div class="alert alert-dark alert-dismissible show" role="alert">
+            Sorry, you are not logged in as the correct user to update this user.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> <!-- x button doesn't work -->
+
+        </div>
+    <h2>Access Denied</h2>
+
 {% endif %}
 
 {% endblock %}

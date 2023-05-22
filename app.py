@@ -6,6 +6,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, UserForm, PasswordForm, NamerForm, PostForm
 
+# to-do FUNCTIONAL
+# user registration, (login, logout, password reset),
+# recipe uploading, (recipe editing, recipe deleting), recipe browsing and interaction features
+# search bar, recipe rating, recipe commenting, (recipe favoriting)
+
+# to-do NON-FUNCTIONAL
+# responsive design, secure authentication, efficient database storage, scalability
+
 # Create a Flask Instance
 app = Flask(__name__)
 # Add Database
@@ -92,9 +100,9 @@ def post(id):
 def edit_post(id):
     post = BlogPost.query.get_or_404(id)
     form = PostForm()
+    id = current_user.id
     if form.validate_on_submit():
         post.title = form.title.data
-        post.author = form.author.data
         post.content = form.content.data
         post.slug = form.slug.data
         # Update the Database
@@ -102,30 +110,39 @@ def edit_post(id):
         db.session.add(post)
         db.session.commit()
         flash('Post has been updated')
-        return redirect(url_for('posts', id=post.id))
-    form.title.data = post.title
-    form.author.data = post.author
-    form.content.data = post.content
-    form.slug.data = post.slug
-    return render_template('edit_post.html', form=form)
+        return redirect(url_for('post', id=post.id))
 
+    if post.poster_id == id:
+        form.title.data = post.title
+        form.content.data = post.content
+        form.slug.data = post.slug
+        return render_template('edit_post.html', form=form)
+    else:
+        flash('You cannot edit this post')
+        posts = BlogPost.query.order_by(BlogPost.date_posted)
+        return render_template('posts.html', posts=posts)
 
 # Delete Post
 @app.route('/posts/delete/<int:id>')
 @login_required
 def delete_post(id):
     post_to_delete = BlogPost.query.get_or_404(id)
-
-    try:
-        db.session.delete(post_to_delete)
-        db.session.commit()
-        flash('Post has been deleted')
+    id = current_user.id
+    if post_to_delete.poster_id != id:
+        flash('You cannot delete this post')
         posts = BlogPost.query.order_by(BlogPost.date_posted)
         return render_template('posts.html', posts=posts)
-    except:
-        flash('There was an error deleting the post')
-        posts = BlogPost.query.order_by(BlogPost.date_posted)
-        return render_template('posts.html', posts=posts)
+    else:
+        try:
+            db.session.delete(post_to_delete)
+            db.session.commit()
+            flash('Post has been deleted')
+            posts = BlogPost.query.order_by(BlogPost.date_posted)
+            return render_template('posts.html', posts=posts)
+        except:
+            flash('There was an error deleting the post')
+            posts = BlogPost.query.order_by(BlogPost.date_posted)
+            return render_template('posts.html', posts=posts)
 
 
 # Add Post Page
@@ -136,11 +153,11 @@ def add_post():
 
     if form.validate_on_submit():
         # Add Data to the Database
-        post = BlogPost(title=form.title.data, content=form.content.data, author=form.author.data, slug=form.slug.data)
+        poster = current_user.id
+        post = BlogPost(title=form.title.data, content=form.content.data, poster_id=poster, slug=form.slug.data)
         # Clear the Form
         form.title.data = ''
         form.content.data = ''
-        form.author.data = ''
         form.slug.data = ''
 
         # Add to the Database
@@ -179,6 +196,7 @@ def add_user():
 
 
 # Create a function to delete data from the database
+# Cannot delete a user that has a post
 @app.route('/delete/<int:id>')
 @login_required
 def delete(id):
@@ -288,9 +306,11 @@ class BlogPost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
     content = db.Column(db.Text)
-    author = db.Column(db.String(255))
+    # author = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
     slug = db.Column(db.String(255))
+    # Create a foreign key to refer to primary key of a user
+    poster_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 
 # Create a Model
@@ -303,6 +323,8 @@ class Users(db.Model, UserMixin):
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
     # Add Password Hashing
     password_hash = db.Column(db.String(128))
+    # Create a relationship between BlogPost and Users
+    posts = db.relationship('BlogPost', backref='poster')
 
     @property
     def password(self):
