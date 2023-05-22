@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, UserForm, PasswordForm, NamerForm, PostForm, SearchForm
+from flask_ckeditor import CKEditor
 
 # to-do FUNCTIONAL
 # user registration, (login, logout, password reset),
@@ -16,6 +17,8 @@ from webforms import LoginForm, UserForm, PasswordForm, NamerForm, PostForm, Sea
 
 # Create a Flask Instance
 app = Flask(__name__)
+# Add CKEditor
+ckeditor = CKEditor(app)
 # Add Database
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/mydb'
