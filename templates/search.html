@@ -1,19 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
 <br/>
-<div style="text-align: center;">
 
     <br/>
-    <h1>Searched for ... </h1>
-    <h2>{{ searched }}</h2>
+    <h1>Searched for: '{{ searched }}' </h1>
     <br/>
     <h2>Search Results:</h2>
     <br/>
     <br/>
+    {% if posts %}
     {% for post in posts %}
-        <h3><a href="{{ url_for('post', id=post.id) }}">{{ post.title }}</a></h3>
-        <br/>
+        <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ post.title }}</h5>
+            <h6 class="card-subtitle mb-2 text-muted">{{ post.poster.username }}</h6>
+            <h6 class="card-subtitle mb-2 text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</h6>
+            <br/>
+            <p class="card-text">{{ post.content|safe }}</p>
+            <a href="{{ url_for('post', id=post.id) }}" class="btn btn-outline-dark">Read More</a>
+
+            {% if post.poster_id == current_user.id %}
+            <a href="{{ url_for('edit_post', id=post.id) }}" class="btn btn-outline-dark">Edit</a>
+            <a href="{{ url_for('delete_post', id=post.id) }}" class="btn btn-outline-danger">Delete</a>
+            {% endif %}
+        </div>
+        </div>
+    <br/>
     {% endfor %}
+    {% else %}
+        <h3>No results found</h3>
+    {% endif %}
 
 
 </div>

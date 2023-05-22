@@ -11,6 +11,7 @@ from flask_ckeditor import CKEditor
 # user registration, (login, logout, password reset),
 # recipe uploading, (recipe editing, recipe deleting), recipe browsing and interaction features
 # search bar, recipe rating, recipe commenting, (recipe favoriting)
+# (admin page)
 
 # to-do NON-FUNCTIONAL
 # responsive design, secure authentication, efficient database storage, scalability
