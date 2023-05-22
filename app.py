@@ -4,7 +4,7 @@ from datetime import datetime
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from webforms import LoginForm, UserForm, PasswordForm, NamerForm, PostForm
+from webforms import LoginForm, UserForm, PasswordForm, NamerForm, PostForm, SearchForm
 
 # to-do FUNCTIONAL
 # user registration, (login, logout, password reset),
@@ -40,6 +40,28 @@ def load_user(user_id):
 
 # New MySQL DB
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/my_db'
+
+
+# Pass Data to Navbar
+@app.context_processor
+def base():
+    form = SearchForm()
+    return dict(form=form)
+
+
+# Create Search Function
+@app.route('/search', methods=['POST'])
+def search():
+    form = SearchForm()
+    posts = BlogPost.query
+    if form.validate_on_submit():
+        # Grab the search string from the form
+        post.searched = form.searched.data
+        # Query the database and filter by the search string
+        posts = posts.filter(BlogPost.content.like("%" + post.searched + "%"))
+        posts = posts.order_by(BlogPost.title.desc()).all()
+
+        return render_template('search.html', searched=post.searched, form=form, posts=posts)
 
 
 @app.route('/')
@@ -180,6 +202,7 @@ def add_user():
         if user is None:
             # Hash the password
             hashed_pw = generate_password_hash(form.password_hash.data, method="sha256")
+            # Add Data to the Database
             user = Users(name=form.name.data, username=form.username.data, email=form.email.data, favorite_color=form.favorite_color.data,
                          password_hash=hashed_pw)
             db.session.add(user)
