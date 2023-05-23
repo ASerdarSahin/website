@@ -7,13 +7,6 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 
 
-#class UploadForm(FlaskForm):
-#    upload = FileField('image', validators=[
-#        FileRequired(),
-#        FileAllowed(['jpg', 'png'], 'Images only!')
-#    ])
-
-
 # Create a Search Form Class
 class SearchForm(FlaskForm):
     searched = StringField("Search", validators=[DataRequired()])
