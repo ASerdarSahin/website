@@ -12,7 +12,7 @@
 <h1>Add Blog Post </h1>
     <br/>
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     {{ form.title.label(class="form-label") }}
     {{ form.title(class="form-control") }}
@@ -22,6 +22,9 @@
     <br/>
     {{ form.content.label(class="form-label") }}
     {{ form.content(class="form-control", rows="5") }}
+    <br/>
+    {{ form.post_pic.label(class="form-label") }}
+    {{ form.post_pic(class="form-control") }} <!-- value= cart curt eklemedim -->
     <br/>
     {{ form.submit(class="btn btn-secondary") }}
 

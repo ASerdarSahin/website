@@ -15,19 +15,26 @@
 {% for post in posts %}
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">{{ post.title }}</h5>
+            <h3 class="card-title">{{ post.title }}</h3>
             <h6 class="card-subtitle mb-2 text-muted">{{ post.poster.username }}</h6>
             <h6 class="card-subtitle mb-2 text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</h6>
+
+            {% if post.post_pic %}
+            <img src="{{ url_for('static', filename='images/' + post.post_pic)}}" width="600" align="right">
+            {% endif %}
             <br/>
             <p class="card-text">{{ post.content|safe }}</p>
             <a href="{{ url_for('post', id=post.id) }}" class="btn btn-outline-dark">Read More</a>
 
-            {% if post.poster_id == current_user.id %}
+            {% if post.poster_id == current_user.id or current_user.id == 23 %}
             <a href="{{ url_for('edit_post', id=post.id) }}" class="btn btn-outline-dark">Edit</a>
             <a href="{{ url_for('delete_post', id=post.id) }}" class="btn btn-outline-danger">Delete</a>
             {% endif %}
         </div>
     </div>
+
+
+
     <br/>
 {% endfor %}
 

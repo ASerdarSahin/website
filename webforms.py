@@ -3,6 +3,15 @@ from wtforms import StringField, SubmitField, PasswordField, BooleanField, Valid
 from wtforms.validators import DataRequired, EqualTo, Length
 from wtforms.widgets import TextArea
 from flask_ckeditor import CKEditorField
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileRequired, FileAllowed
+
+
+#class UploadForm(FlaskForm):
+#    upload = FileField('image', validators=[
+#        FileRequired(),
+#        FileAllowed(['jpg', 'png'], 'Images only!')
+#    ])
 
 
 # Create a Search Form Class
@@ -17,6 +26,7 @@ class PostForm(FlaskForm):
     # content = StringField("Content", validators=[DataRequired()], widget=TextArea())
     content = CKEditorField('Content', validators=[DataRequired()])
     slug = StringField("Slug", validators=[DataRequired()])
+    post_pic = FileField('Post Pic')
     submit = SubmitField("Submit")
 
 

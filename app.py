@@ -1,4 +1,8 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileField
+from werkzeug.utils import secure_filename
+import uuid as uuid
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_migrate import Migrate
@@ -6,6 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, UserForm, PasswordForm, NamerForm, PostForm, SearchForm
 from flask_ckeditor import CKEditor
+import os
 
 # to-do FUNCTIONAL
 # user registration, (login, logout, password reset),
@@ -25,6 +30,9 @@ ckeditor = CKEditor(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:KH5!ajwQQ72uxrh@localhost/mydb'
 
 app.config['SECRET_KEY'] = "mysecretkey"  # For CSRF Protection (Forms)
+
+UPLOAD_FOLDER = 'static/images/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Initialize the Database
 db = SQLAlchemy(app)
@@ -51,6 +59,30 @@ def load_user(user_id):
 def base():
     form = SearchForm()
     return dict(form=form)
+
+
+#@app.route('/upload', methods=['GET', 'POST'])
+#def upload():
+#    form = UploadForm()
+#
+#    if form.validate_on_submit():
+#        filename = secure_filename(form.file.data.filename)
+#        form.file.data.save('uploads/' + filename)
+#        return redirect(url_for('upload'))
+#
+#    return render_template('upload.html', form=form)
+
+
+# Create an Admin Page
+@app.route('/admin')
+@login_required
+def admin():
+    id = current_user.id
+    if id == 23:
+        return render_template('admin.html')
+    else:
+        flash('You do not have permission to access this page')
+        return redirect(url_for('dashboard'))
 
 
 # Create Search Function
@@ -138,7 +170,7 @@ def edit_post(id):
         flash('Post has been updated')
         return redirect(url_for('post', id=post.id))
 
-    if post.poster_id == id:
+    if id == post.poster_id or id == 23:
         form.title.data = post.title
         form.content.data = post.content
         form.slug.data = post.slug
@@ -148,17 +180,15 @@ def edit_post(id):
         posts = BlogPost.query.order_by(BlogPost.date_posted)
         return render_template('posts.html', posts=posts)
 
+
+
 # Delete Post
 @app.route('/posts/delete/<int:id>')
 @login_required
 def delete_post(id):
     post_to_delete = BlogPost.query.get_or_404(id)
     id = current_user.id
-    if post_to_delete.poster_id != id:
-        flash('You cannot delete this post')
-        posts = BlogPost.query.order_by(BlogPost.date_posted)
-        return render_template('posts.html', posts=posts)
-    else:
+    if id == post_to_delete.poster_id or id == 23:
         try:
             db.session.delete(post_to_delete)
             db.session.commit()
@@ -169,6 +199,10 @@ def delete_post(id):
             flash('There was an error deleting the post')
             posts = BlogPost.query.order_by(BlogPost.date_posted)
             return render_template('posts.html', posts=posts)
+    else:
+        flash('You cannot delete this post')
+        posts = BlogPost.query.order_by(BlogPost.date_posted)
+        return render_template('posts.html', posts=posts)
 
 
 # Add Post Page
@@ -180,8 +214,16 @@ def add_post():
     if form.validate_on_submit():
         # Add Data to the Database
         poster = current_user.id
-        post = BlogPost(title=form.title.data, content=form.content.data, poster_id=poster, slug=form.slug.data)
-        # Clear the Form
+        post_pic = request.files['post_pic']
+        pic_filename = secure_filename(post_pic.filename)
+        pic_name = str(uuid.uuid1()) + "_" + pic_filename
+        # Save the picture
+        post_pic.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+        # Change it to a string to save to database
+        post_pic = pic_name
+        post = BlogPost(title=form.title.data, content=form.content.data, poster_id=poster, slug=form.slug.data,
+                        post_pic=post_pic)
+        # Clear Form
         form.title.data = ''
         form.content.data = ''
         form.slug.data = ''
@@ -227,20 +269,24 @@ def add_user():
 @app.route('/delete/<int:id>')
 @login_required
 def delete(id):
-    name = None
-    form = UserForm()
-    user_to_delete = Users.query.get_or_404(id)
-    try:
-        db.session.delete(user_to_delete)
-        db.session.commit()
-        flash("Data deleted successfully.")
+    if id == current_user.id:
+        name = None
+        form = UserForm()
+        user_to_delete = Users.query.get_or_404(id)
+        try:
+            db.session.delete(user_to_delete)
+            db.session.commit()
+            flash("Data deleted successfully.")
 
-        our_users = Users.query.order_by(Users.date_added)
-        return render_template('add_user.html', form=form, name=name, our_users=our_users)
-    except:
-        flash("There was a problem deleting data.")
-        our_users = Users.query.order_by(Users.date_added)
-        return render_template('add_user.html', form=form, name=name, our_users=our_users)
+            our_users = Users.query.order_by(Users.date_added)
+            return render_template('add_user.html', form=form, name=name, our_users=our_users)
+        except:
+            flash("There was a problem deleting data.")
+            our_users = Users.query.order_by(Users.date_added)
+            return render_template('add_user.html', form=form, name=name, our_users=our_users)
+    else:
+        flash("You cannot delete another user's account")
+        return redirect( url_for('dashboard'))
 
 
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
@@ -336,8 +382,10 @@ class BlogPost(db.Model):
     # author = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
     slug = db.Column(db.String(255))
+    post_pic = db.Column(db.String(255), nullable=True)
     # Create a foreign key to refer to primary key of a user
     poster_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    rating = db.Column(db.Integer)
 
 
 # Create a Model
