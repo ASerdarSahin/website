@@ -1,6 +1,4 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
-from flask_wtf import FlaskForm
-from flask_wtf.file import FileField
 from werkzeug.utils import secure_filename
 import uuid as uuid
 from flask_sqlalchemy import SQLAlchemy
@@ -59,18 +57,6 @@ def load_user(user_id):
 def base():
     form = SearchForm()
     return dict(form=form)
-
-
-#@app.route('/upload', methods=['GET', 'POST'])
-#def upload():
-#    form = UploadForm()
-#
-#    if form.validate_on_submit():
-#        filename = secure_filename(form.file.data.filename)
-#        form.file.data.save('uploads/' + filename)
-#        return redirect(url_for('upload'))
-#
-#    return render_template('upload.html', form=form)
 
 
 # Create an Admin Page
