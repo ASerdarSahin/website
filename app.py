@@ -13,7 +13,7 @@ import os
 # to-do FUNCTIONAL
 # user registration, (login, logout, password reset),
 # recipe uploading, (recipe editing, recipe deleting), recipe browsing and interaction features
-# search bar, recipe rating, recipe commenting, (recipe favoriting)
+# search bar, recipe rating[like dislike, counter], recipe commenting, (recipe favoriting)
 # (admin page)
 
 # to-do NON-FUNCTIONAL
@@ -57,6 +57,25 @@ def load_user(user_id):
 def base():
     form = SearchForm()
     return dict(form=form)
+
+
+@app.route('/like-post/<int:post_id>', methods=['GET', 'POST']) #@app.route('/like-post/<int:post_id>/<action>')
+@login_required
+def like(post_id):
+    post = BlogPost.query.filter_by(id=post_id)
+    like = Like.query.filter_by(user_id=current_user.id, post_id=post_id).first()
+    if not post:
+        flash('Post does not exist.', category='error')
+    elif like:
+        db.session.delete(like)
+        db.session.commit()
+    else:
+        like = Like(user_id=current_user.id, post_id=post_id)
+        db.session.add(like)
+        db.session.commit()
+
+    return redirect(request.referrer)
+
 
 
 # Create an Admin Page
@@ -251,7 +270,7 @@ def add_user():
 
 
 # Create a function to delete data from the database
-# Cannot delete a user that has a post
+# Cannot delete a user that has a post "ondelete='CASCADE'"
 @app.route('/delete/<int:id>')
 @login_required
 def delete(id):
@@ -371,7 +390,7 @@ class BlogPost(db.Model):
     post_pic = db.Column(db.String(255), nullable=True)
     # Create a foreign key to refer to primary key of a user
     poster_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    rating = db.Column(db.Integer)
+    likes = db.relationship('Like', backref='post')
 
 
 # Create a Model
@@ -386,6 +405,7 @@ class Users(db.Model, UserMixin):
     password_hash = db.Column(db.String(128))
     # Create a relationship between BlogPost and Users
     posts = db.relationship('BlogPost', backref='poster')
+    likes = db.relationship('Like', backref='poster')
 
     @property
     def password(self):
@@ -401,4 +421,10 @@ class Users(db.Model, UserMixin):
     # Create a String
     def __repr__(self):
         return '<Name %r>' % self.name
+
+
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'))
 

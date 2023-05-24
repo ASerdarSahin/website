@@ -18,6 +18,20 @@
             <h2 class="card-title">{{ post.title }}</h2>
             <h6 class="card-subtitle mb-2 text-muted">{{ post.poster.username }}</h6>
             <h6 class="card-subtitle mb-2 text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</h6>
+            <div>
+                {{ post.likes|length }}
+                {% if like in post.likes|map(attribute="poster_id")|list %} <!-- or attribute="author" -->
+                    {% for like in post.likes %}
+                        {% if like.user_id == current_user.id %}
+                            <br/>You liked this post!
+                            <a href="/like-post/{{ post.id }}"><i class="{{ "fas fa-thumbs-up" }}"></i></a>
+                        {% else %}
+                            <a href="/like-post/{{ post.id }}"><i class="{{ "far fa-thumbs-up" }}"></i></a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <a href="/like-post/{{ post.id }}"><i class="{{ "far fa-thumbs-up" }}"></i></a>
+                {% endif %}
                 {% if post.post_pic %}
                 <img src="{{ url_for('static', filename='images/' + post.post_pic)}}" width="600" align="right">
                 {% endif %}
@@ -28,6 +42,7 @@
             <a href="{{ url_for('edit_post', id=post.id) }}" class="btn btn-outline-dark">Edit</a>
             <a href="{{ url_for('delete_post', id=post.id) }}" class="btn btn-outline-danger">Delete</a>
             {% endif %}
+            </div>
         </div>
     </div>
     <br/>

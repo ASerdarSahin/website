@@ -11,25 +11,41 @@
 
 <h1>Blog Posts...</h1>
 <br/>
-
 {% for post in posts %}
     <div class="card">
         <div class="card-body">
             <h3 class="card-title">{{ post.title }}</h3>
             <h6 class="card-subtitle mb-2 text-muted">{{ post.poster.username }}</h6>
             <h6 class="card-subtitle mb-2 text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</h6>
+            <div>
 
-            {% if post.post_pic %}
-            <img src="{{ url_for('static', filename='images/' + post.post_pic)}}" width="600" align="right">
-            {% endif %}
-            <br/>
-            <p class="card-text">{{ post.content|safe }}</p>
-            <a href="{{ url_for('post', id=post.id) }}" class="btn btn-outline-dark">Read More</a>
+                {{ post.likes|length }} Likes
+                {% if like in post.likes|map(attribute="poster_id")|list %} <!-- or attribute="author" -->
+                    {% for like in post.likes %}
+                        {% if like.user_id == current_user.id %}
+                            <br/>You liked this post!
+                            <a href="/like-post/{{ post.id }}"><i class="{{ "fas fa-thumbs-up" }}"></i></a>
+                        {% else %}
+                            <a href="/like-post/{{ post.id }}"><i class="{{ "far fa-thumbs-up" }}"></i></a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <a href="/like-post/{{ post.id }}"><i class="{{ "far fa-thumbs-up" }}"></i></a>
+                {% endif %}
 
-            {% if post.poster_id == current_user.id or current_user.id == 23 %}
-            <a href="{{ url_for('edit_post', id=post.id) }}" class="btn btn-outline-dark">Edit</a>
-            <a href="{{ url_for('delete_post', id=post.id) }}" class="btn btn-outline-danger">Delete</a>
-            {% endif %}
+
+                {% if post.post_pic %}
+                <img src="{{ url_for('static', filename='images/' + post.post_pic)}}" width="600" align="right">
+                {% endif %}
+                <br/>
+                <p class="card-text">{{ post.content|safe }}</p>
+                <a href="{{ url_for('post', id=post.id) }}" class="btn btn-outline-dark">Read More</a>
+                {% if post.poster_id == current_user.id or current_user.id == 23 %}
+                <a href="{{ url_for('edit_post', id=post.id) }}" class="btn btn-outline-dark">Edit</a>
+                <a href="{{ url_for('delete_post', id=post.id) }}" class="btn btn-outline-danger">Delete</a>
+
+                {% endif %}
+            </div>
         </div>
     </div>
 
