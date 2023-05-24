@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg" style="background-color: #D2691E;">
   <div class="container-fluid">
     <a class="navbar-brand" href="{{ url_for('hello_world') }}">Website</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -6,12 +6,6 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('blog') }}">Blog</a>
-        </li>
-          <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('name') }}">Name</a>
-        </li>
 
         {% if current_user.is_authenticated %}
             <li class="nav-item">
@@ -25,6 +19,9 @@
               <a class="nav-link" href="{{ url_for('admin') }}">Admin</a>
             </li>
             {% endif %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('add_post') }}">Add Recipe</a>
+            </li>
         {% else %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('login') }}">Login</a>
@@ -33,9 +30,7 @@
               <a class="nav-link" href="{{ url_for('add_user') }}">Register</a>
             </li>
         {% endif %}
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('add_post') }}">Add Blog Post</a>
-        </li>
+
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('posts') }}">Posts</a>
         </li>
@@ -44,7 +39,7 @@
       <form method="POST" action="{{ url_for('search') }}" class="d-flex" role="search">
           {{ form.hidden_tag() }}
         <input class="form-control me-2" required type="search" placeholder="Search" aria-label="Search", name="searched">
-        <button class="btn btn-secondary" type="submit">Search</button>
+        <button class="btn btn-secondary" type="submit" >Search</button>
       </form>
     </div>
   </div>

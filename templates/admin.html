@@ -3,8 +3,21 @@
 <br/>
 
     <h1>Admin Page</h1>
-    <h2>Stuff</h2>
+    <br/><br/>
+    <table class="table table-light table-hover table-bordered table-striped">
 
-    <a href="/">Go to the home page</a>
+    <h2> USER LIST: </h2>
+    <br/>
+    {% for our_user in our_users %}
+        <tr>
+        <td>
+        {{ our_user.id }}.  <a href="{{url_for('update', id=our_user.id)}}">{{ our_user.name }}</a>
+            - {{ our_user.username }} - {{ our_user.email }} - {{ our_user.favorite_color }}
+            - <a href="{{url_for('delete', id=our_user.id)}}">Delete</a>
+            - PW: {{ our_user.password_hash }}
+        </td>
+        </tr>
+    {% endfor %}
+    </table>
 
 {% endblock %}

@@ -9,7 +9,6 @@
     </div>
 {% endfor %}
 
-<h1>Blog Posts...</h1>
 <br/>
 
 
@@ -44,6 +43,28 @@
             {% endif %}
             </div>
         </div>
+    <br/><br/>
+        <strong>{{ post.comments|length }} Comments</strong>
+    <br/><br/>
+    {% for comment in post.comments %}
+        <div class="shadow p-3 mb-5 bg-body rounded">
+
+            <h6 class="card-subtitle mb-2">{{ comment.user.username }}</h6>
+            <h6 class="card-subtitle mb-2 text-muted">{{ comment.date_created.strftime('%Y-%m-%d') }}</h6>
+            <div>
+                <br/>
+            <p class="card-text">{{ comment.text|safe }}</p>
+            {% if post.poster_id == current_user.id %}
+            <a href="/delete-comment/{{comment.id}}" class="btn btn-outline-danger">Delete</a>
+            {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+    <br/>
+    <form class="input-group mb-3" method='POST' action="/create-comment/{{ post.id }}">
+        <input type="text" id="text" name="text" class="form-control" placeholder="Comment Here!"/>
+        <button type="submit" class="btn btn-outline-dark">Comment</button>
+    </form>
     </div>
     <br/>
 {% endblock %}

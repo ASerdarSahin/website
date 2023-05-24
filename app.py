@@ -59,7 +59,43 @@ def base():
     return dict(form=form)
 
 
-@app.route('/like-post/<int:post_id>', methods=['GET', 'POST']) #@app.route('/like-post/<int:post_id>/<action>')
+@app.route("/create-comment/<post_id>", methods=['POST'])
+@login_required
+def create_comment(post_id):
+    text = request.form.get('text')
+
+    if not text:
+        flash('Comment cannot be empty.', category='error')
+    else:
+        post = BlogPost.query.filter_by(id=post_id)
+        if post:
+            comment = Comment(
+                text=text, author=current_user.id, post_id=post_id)
+            db.session.add(comment)
+            db.session.commit()
+        else:
+            flash('Post does not exist.', category='error')
+
+    return redirect(request.referrer)
+
+
+@app.route("/delete-comment/<comment_id>")
+@login_required
+def delete_comment(comment_id):
+    comment = Comment.query.filter_by(id=comment_id).first()
+
+    if not comment:
+        flash('Comment does not exist.', category='error')
+    elif current_user.id != comment.author and current_user.id != comment.post.author:
+        flash('You do not have permission to delete this comment.', category='error')
+    else:
+        db.session.delete(comment)
+        db.session.commit()
+
+    return redirect(request.referrer)
+
+
+@app.route('/like-post/<int:post_id>', methods=['GET']) #@app.route('/like-post/<int:post_id>/<action>')
 @login_required
 def like(post_id):
     post = BlogPost.query.filter_by(id=post_id)
@@ -84,7 +120,8 @@ def like(post_id):
 def admin():
     id = current_user.id
     if id == 23:
-        return render_template('admin.html')
+        our_users = Users.query.order_by(Users.date_added)
+        return render_template('admin.html', our_users=our_users)
     else:
         flash('You do not have permission to access this page')
         return redirect(url_for('dashboard'))
@@ -343,26 +380,6 @@ def test_pw():
                            form=form)
 
 
-@app.route('/name', methods=['GET', 'POST'])
-def name():
-    name = None
-    form = NamerForm()
-    # Validate Form
-    if form.validate_on_submit():
-        name = form.name.data
-        form.name.data = ''
-        flash('Form Submitted Successfully!')
-    return render_template('name.html', form=form, name=name)
-
-
-@app.route('/blog')
-def blog():
-    posts = [{'title': 'Post 1', 'content': 'This is the content of post 1. Lorem ipsum dolor sit amet.'},
-             {'title': 'Post 2', 'content': 'This is the content of post 2. Lorem ipsum dolor sit amet.'}
-             ]
-    return render_template('blog.html', sunny=True, author='Serdar', posts=posts)
-
-
 if __name__ == '__main__':
     app.run()
 
@@ -391,6 +408,7 @@ class BlogPost(db.Model):
     # Create a foreign key to refer to primary key of a user
     poster_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     likes = db.relationship('Like', backref='post')
+    comments = db.relationship('Comment', backref='post', passive_deletes=True)
 
 
 # Create a Model
@@ -406,6 +424,7 @@ class Users(db.Model, UserMixin):
     # Create a relationship between BlogPost and Users
     posts = db.relationship('BlogPost', backref='poster')
     likes = db.relationship('Like', backref='poster')
+    comments = db.relationship('Comment', backref='user', passive_deletes=True)
 
     @property
     def password(self):
@@ -427,4 +446,12 @@ class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'))
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(200), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id', ondelete="CASCADE"), nullable=False)
 
