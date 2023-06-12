@@ -3,9 +3,8 @@
 {% block content %}
 
 {% for message in get_flashed_messages() %}
-    <div class="alert alert-dark alert-dismissible show" role="alert">
+    <div class="alert alert-dark alert" role="alert">
         {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> <!-- x button doesn't work -->
     </div>
 {% endfor %}
 
@@ -25,7 +24,7 @@
     </table>
 
 {% else %}
-    <h1> User List:</h1>
+    <h1> Register:</h1>
     <br/>
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
     <form method="POST">
@@ -53,21 +52,6 @@
     </form>
     </div>
     <br/><br/>
-    <table class="table table-light table-hover table-bordered table-striped">
-
-    <h2> TEMPORARY </h2>
-
-    {% for our_user in our_users %}
-        <tr>
-        <td>
-        {{ our_user.id }}.  <a href="{{url_for('update', id=our_user.id)}}">{{ our_user.name }}</a>
-            - {{ our_user.username }} - {{ our_user.email }} - {{ our_user.favorite_color }}
-            - <a href="{{url_for('delete', id=our_user.id)}}">Delete</a>
-            - PW: {{ our_user.password_hash }}
-        </td>
-        </tr>
-    {% endfor %}
-    </table>
 {% endif %}
 
 {% endblock %}

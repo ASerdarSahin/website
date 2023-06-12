@@ -3,10 +3,8 @@
 {% block content %}
 
 {% for message in get_flashed_messages() %}
-    <div class="alert alert-dark alert-dismissible show" role="alert">
+    <div class="alert alert-dark alert" role="alert">
         {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> <!-- x button doesn't work -->
-
     </div>
 {% endfor %}
 

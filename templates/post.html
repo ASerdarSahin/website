@@ -3,9 +3,8 @@
 {% block content %}
 
 {% for message in get_flashed_messages() %}
-    <div class="alert alert-dark alert-dismissible show" role="alert">
+    <div class="alert alert-dark alert" role="alert">
         {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> <!-- x button doesn't work -->
     </div>
 {% endfor %}
 
@@ -61,6 +60,7 @@
         </div>
     {% endfor %}
     <br/>
+    
     <form class="input-group mb-3" method='POST' action="/create-comment/{{ post.id }}">
         <input type="text" id="text" name="text" class="form-control" placeholder="Comment Here!"/>
         <button type="submit" class="btn btn-outline-dark">Comment</button>
